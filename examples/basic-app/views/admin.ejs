@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Basic App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card h3 {
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-right: 10px;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Admin Panel</h1>
+            <p style="margin-top: 10px; opacity: 0.9;">
+                Restricted area - admin access only
+            </p>
+        </div>
+
+        <div class="warning">
+            <strong>Note:</strong> This is a demonstration page. In a real application, you would check
+            the X-User-Groups header to verify admin access before showing this page.
+        </div>
+
+        <div class="card">
+            <h3>Current Admin</h3>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Email</td>
+                    <td><%= user.email %></td>
+                </tr>
+                <tr>
+                    <td>Username</td>
+                    <td><%= user.username %></td>
+                </tr>
+                <tr>
+                    <td>Groups</td>
+                    <td><%= user.groups || 'None' %></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="card">
+            <h3>Admin Features</h3>
+            <p style="color: #666; margin-bottom: 20px;">
+                In a real application, you would have admin-only features here:
+            </p>
+            <ul style="color: #666; margin-left: 20px; line-height: 1.8;">
+                <li>User management</li>
+                <li>System settings</li>
+                <li>Access logs</li>
+                <li>Analytics</li>
+                <li>Security settings</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>Implementation Example</h3>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 0.9em;"><code>// Role-based access control example
+function requireRole(role) {
+    return (req, res, next) => {
+        const groups = req.headers['x-user-groups'] || '';
+        if (groups.split(',').includes(role)) {
+            next();
+        } else {
+            res.status(403).send('Forbidden');
+        }
+    };
+}
+
+// Protect admin routes
+app.get('/admin', requireRole('admin'), (req, res) => {
+    res.render('admin', { user: req.user });
+});</code></pre>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <a href="/" class="btn">← Back to Home</a>
+            <a href="/dashboard" class="btn">Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

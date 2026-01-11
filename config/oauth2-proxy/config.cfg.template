@@ -1,0 +1,62 @@
+# OAuth2 Proxy Configuration for AWS Cognito
+# Template configuration file - replace variables with your values
+#
+# Variables to replace:
+#   {{AWS_REGION}}          - AWS region (e.g., us-east-1)
+#   {{COGNITO_POOL_ID}}     - Cognito User Pool ID (e.g., us-east-1_XXXXXXXXX)
+#   {{CLIENT_ID}}           - Cognito App Client ID
+#   {{CLIENT_SECRET}}       - Cognito App Client Secret
+#   {{DOMAIN}}              - Your domain or IP (e.g., example.com)
+#   {{COOKIE_SECRET}}       - Random 32-byte base64-encoded string
+#   {{OAUTH2_PROXY_PORT}}   - Port for oauth2-proxy (default: 4180)
+
+# Provider Configuration
+provider = "oidc"
+provider_display_name = "AWS Cognito"
+
+# Cognito OIDC Configuration
+# Replace with your Cognito user pool details
+oidc_issuer_url = "https://cognito-idp.{{AWS_REGION}}.amazonaws.com/{{COGNITO_USER_POOL_ID}}"
+client_id = "{{COGNITO_CLIENT_ID}}"
+client_secret = "{{COGNITO_CLIENT_SECRET}}"
+
+# Callback URL - must match what's registered in Cognito
+redirect_url = "https://{{DOMAIN}}/oauth2/callback"
+whitelist_domains = ["{{DOMAIN}}"]
+
+# Email domain restrictions (use ["*"] to allow all domains)
+email_domains = ["*"]
+
+# Cookie configuration
+cookie_name = "_oauth2_proxy"
+cookie_secret = "{{COOKIE_SECRET}}"  # Generate with: python -c 'import os,base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())'
+cookie_domains = ["{{DOMAIN}}"]
+cookie_secure = true          # Set to true for HTTPS (production)
+cookie_httponly = true
+cookie_samesite = "lax"
+cookie_expire = "24h"
+cookie_refresh = "1h"
+
+# Listen address (internal only - nginx will proxy to this)
+http_address = "127.0.0.1:4180"
+
+# Upstream (not actually used - nginx handles the proxying)
+# But oauth2-proxy requires this to be set
+upstreams = ["http://127.0.0.1:8080"]
+
+# Logging
+request_logging = true
+auth_logging = true
+standard_logging = true
+
+# Pass user info to backend via headers
+set_xauthrequest = true
+pass_access_token = false
+pass_authorization_header = false
+pass_user_headers = true
+
+# Skip provider selection button (go straight to Cognito)
+skip_provider_button = true
+
+# Allowed scopes from Cognito
+scope = "openid email profile"

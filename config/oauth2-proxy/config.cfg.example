@@ -1,0 +1,53 @@
+# OAuth2 Proxy Configuration for AWS Cognito
+# Example configuration with secrets REDACTED
+# Copy this file to config.cfg and replace the placeholders
+
+# OIDC Provider (AWS Cognito)
+provider = "oidc"
+provider_display_name = "AWS Cognito"
+
+# Cognito OIDC configuration
+# Replace with your Cognito user pool details
+oidc_issuer_url = "https://cognito-idp.REGION.amazonaws.com/REGION_POOL-ID"
+client_id = "YOUR_COGNITO_APP_CLIENT_ID"
+client_secret = "YOUR_COGNITO_APP_CLIENT_SECRET"
+
+# Callback URL - must match what's registered in Cognito
+redirect_url = "https://YOUR_DOMAIN/oauth2/callback"
+whitelist_domains = ["YOUR_DOMAIN"]
+
+# Email domain restrictions (use ["*"] to allow all domains)
+email_domains = ["*"]
+
+# Cookie configuration
+cookie_name = "_oauth2_proxy"
+cookie_secret = "GENERATE_A_RANDOM_32_CHAR_SECRET_HERE"  # Generate with: openssl rand -base64 32 | tr -d '\n'
+cookie_domains = ["YOUR_DOMAIN_HERE"]
+cookie_secure = true          # Set to true for HTTPS (production)
+cookie_httponly = true
+cookie_samesite = "lax"
+cookie_expire = "24h"
+cookie_refresh = "1h"
+
+# Listen address (internal only - not exposed to internet)
+http_address = "127.0.0.1:4180"
+
+# Upstream (not used when nginx handles proxying)
+upstreams = ["http://127.0.0.1:3000"]
+
+# Logging
+request_logging = true
+auth_logging = true
+standard_logging = true
+
+# Pass user info to backend
+set_xauthrequest = true
+pass_access_token = false
+pass_authorization_header = false
+pass_user_headers = true
+
+# Skip provider selection button (go straight to Cognito)
+skip_provider_button = true
+
+# Allowed scopes
+scope = "openid email profile"

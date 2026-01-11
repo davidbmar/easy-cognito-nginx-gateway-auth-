@@ -1,0 +1,107 @@
+# Easy Cognito Nginx Gateway Authentication - Multi-App Configuration
+# Template for protecting multiple applications with one gateway
+#
+# Variables to replace:
+#   {{DOMAIN}}              - Your domain or IP
+#   {{SSL_CERT_PATH}}       - Path to SSL certificate
+#   {{SSL_KEY_PATH}}        - Path to SSL private key
+#   {{OAUTH2_PROXY_PORT}}   - oauth2-proxy port (default: 4180)
+
+upstream oauth2_proxy {
+    server 127.0.0.1:{{OAUTH2_PROXY_PORT}};
+}
+
+# Define your application upstreams
+upstream app1 {
+    server 127.0.0.1:3000;
+}
+
+upstream app2 {
+    server 127.0.0.1:4000;
+}
+
+upstream app3 {
+    server 127.0.0.1:5000;
+}
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+
+    ssl_certificate {{SSL_CERT_PATH}};
+    ssl_certificate_key {{SSL_KEY_PATH}};
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    server_name {{DOMAIN}};
+
+    # OAuth2 Proxy endpoints
+    location /oauth2/ {
+        proxy_pass http://oauth2_proxy;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Scheme $scheme;
+        proxy_set_header X-Auth-Request-Redirect $request_uri;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Cookie $http_cookie;
+        proxy_pass_request_headers on;
+        proxy_buffer_size 16k;
+        proxy_buffers 8 64k;
+        proxy_busy_buffers_size 128k;
+    }
+
+    # Application 1 at root path
+    location / {
+        auth_request /oauth2/auth;
+        error_page 401 = /oauth2/start?rd=$scheme://$host$request_uri;
+
+        auth_request_set $user $upstream_http_x_auth_request_user;
+        auth_request_set $email $upstream_http_x_auth_request_email;
+
+        proxy_pass http://app1;
+        proxy_set_header X-User-Email $email;
+        proxy_set_header X-Auth-Request-User $user;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Application 2 at /app2/
+    location /app2/ {
+        auth_request /oauth2/auth;
+        error_page 401 = /oauth2/start?rd=$scheme://$host$request_uri;
+
+        auth_request_set $user $upstream_http_x_auth_request_user;
+        auth_request_set $email $upstream_http_x_auth_request_email;
+
+        rewrite ^/app2/(.*)$ /$1 break;
+        proxy_pass http://app2;
+        proxy_set_header X-User-Email $email;
+        proxy_set_header X-Auth-Request-User $user;
+        proxy_set_header Host $host;
+    }
+
+    # Application 3 at /app3/
+    location /app3/ {
+        auth_request /oauth2/auth;
+        error_page 401 = /oauth2/start?rd=$scheme://$host$request_uri;
+
+        auth_request_set $user $upstream_http_x_auth_request_user;
+        auth_request_set $email $upstream_http_x_auth_request_email;
+
+        rewrite ^/app3/(.*)$ /$1 break;
+        proxy_pass http://app3;
+        proxy_set_header X-User-Email $email;
+        proxy_set_header X-Auth-Request-User $user;
+        proxy_set_header Host $host;
+    }
+
+    # Health check
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+}

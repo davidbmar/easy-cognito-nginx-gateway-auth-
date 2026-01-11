@@ -1,0 +1,24 @@
+[Unit]
+Description=OAuth2 Proxy for AWS Cognito Authentication
+Documentation=https://github.com/oauth2-proxy/oauth2-proxy
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+ExecStart=/usr/local/bin/oauth2-proxy --config=/etc/oauth2-proxy/config.cfg
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/oauth2-proxy.log
+StandardError=append:/var/log/oauth2-proxy.log
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log
+
+[Install]
+WantedBy=multi-user.target

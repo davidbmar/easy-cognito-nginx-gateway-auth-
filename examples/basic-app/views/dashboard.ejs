@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Basic App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .user-badge {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .stat {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Dashboard</h1>
+                <p style="color: #666; margin-top: 5px;">Welcome back, <%= user.email %></p>
+            </div>
+            <div class="user-badge">
+                <%= user.email %>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>User Information</h3>
+                <p><strong>Email:</strong> <%= user.email %></p>
+                <p><strong>Username:</strong> <%= user.username %></p>
+                <p><strong>Groups:</strong> <%= user.groups || 'None' %></p>
+            </div>
+
+            <div class="card">
+                <h3>Active Sessions</h3>
+                <div class="stat">1</div>
+                <div class="stat-label">Current session</div>
+            </div>
+
+            <div class="card">
+                <h3>Last Login</h3>
+                <div class="stat"><%= new Date().toLocaleDateString() %></div>
+                <div class="stat-label"><%= new Date().toLocaleTimeString() %></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Quick Actions</h3>
+            <p style="color: #666; margin-bottom: 20px;">Explore the authentication gateway features</p>
+            <a href="/" class="btn">Home</a>
+            <a href="/admin" class="btn">Admin Panel</a>
+            <a href="/api/user" class="btn">User API</a>
+            <a href="/api/headers" class="btn">Debug Headers</a>
+            <a href="/logout" class="btn btn-secondary">Logout</a>
+        </div>
+    </div>
+</body>
+</html>

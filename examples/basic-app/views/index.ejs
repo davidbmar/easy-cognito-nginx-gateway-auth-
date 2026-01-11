@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic App - Cognito Auth Example</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .user-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        .user-info {
+            margin-bottom: 15px;
+        }
+        .label {
+            font-weight: 600;
+            color: #555;
+            display: inline-block;
+            min-width: 120px;
+        }
+        .value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .success-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        .info-section {
+            background: #e7f3ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .info-section h3 {
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+        .info-section p {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+        .footer {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-badge">✓ Authenticated</div>
+
+        <h1>Welcome, <%= user.email %>!</h1>
+        <p class="subtitle">You are successfully authenticated via AWS Cognito</p>
+
+        <div class="user-card">
+            <h2 style="margin-bottom: 20px; color: #667eea;">Your Information</h2>
+            <div class="user-info">
+                <span class="label">Email:</span>
+                <span class="value"><%= user.email %></span>
+            </div>
+            <div class="user-info">
+                <span class="label">Username:</span>
+                <span class="value"><%= user.username %></span>
+            </div>
+            <div class="user-info">
+                <span class="label">Groups:</span>
+                <span class="value"><%= user.groups || 'None' %></span>
+            </div>
+            <div class="user-info">
+                <span class="label">Timestamp:</span>
+                <span class="value"><%= timestamp %></span>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="/dashboard" class="btn btn-primary">Dashboard</a>
+            <a href="/admin" class="btn btn-primary">Admin (requires admin role)</a>
+            <a href="/api/user" class="btn btn-primary">View User API</a>
+            <a href="/api/headers" class="btn btn-primary">View All Headers</a>
+            <a href="/logout" class="btn btn-danger">Logout</a>
+        </div>
+
+        <div class="info-section">
+            <h3>How This Works</h3>
+            <p>This application has <strong>zero authentication code</strong>. All authentication is handled by:</p>
+            <ul style="margin-left: 20px; margin-top: 10px; color: #333;">
+                <li style="margin-bottom: 8px;"><strong>nginx:</strong> Reverse proxy with auth_request directive</li>
+                <li style="margin-bottom: 8px;"><strong>oauth2-proxy:</strong> OIDC client for AWS Cognito</li>
+                <li style="margin-bottom: 8px;"><strong>AWS Cognito:</strong> Identity provider</li>
+            </ul>
+            <p style="margin-top: 15px;">Your user information is passed via HTTP headers:</p>
+            <div class="code-block">
+X-User-Email: <%= user.email %>
+X-User: <%= user.username %>
+X-User-Groups: <%= user.groups || 'None' %>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>Key Benefits</h3>
+            <ul style="margin-left: 20px; margin-top: 10px; color: #333;">
+                <li style="margin-bottom: 8px;">✅ No authentication library needed</li>
+                <li style="margin-bottom: 8px;">✅ Works with any framework (Node.js, Python, Ruby, etc.)</li>
+                <li style="margin-bottom: 8px;">✅ Centralized authentication management</li>
+                <li style="margin-bottom: 8px;">✅ Secure OAuth2 + OIDC flow</li>
+                <li style="margin-bottom: 8px;">✅ Easy to add/remove applications</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Protected by Easy Cognito Nginx Gateway Auth</p>
+            <p style="margin-top: 5px; font-size: 0.85em;">
+                <a href="https://github.com/YOUR_USERNAME/easy-cognito-nginx-gateway-auth"
+                   style="color: #667eea; text-decoration: none;">View on GitHub</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

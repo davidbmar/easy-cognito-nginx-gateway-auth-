@@ -1,0 +1,12 @@
+{
+  "name": "app2-analytics",
+  "version": "1.0.0",
+  "description": "Analytics app - Multi-app example",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
