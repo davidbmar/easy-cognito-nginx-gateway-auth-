@@ -1,7 +1,14 @@
+
+
 # Easy Cognito Nginx Gateway Auth
 
 **Simple, production-ready AWS Cognito authentication gateway using nginx and oauth2-proxy**
+  Why this architecture works so well:
 
+  1. Single Responsibility: Each repo does ONE thing perfectly - gateway handles auth, ssh-helper manages access, cloner clones websites
+  2. Loose Coupling: Applications don't know about authentication. They just read headers. This means you can swap out the gateway or add new apps without changing existing code
+  3. Terraform Automation: The compute module's user_data template calls the install scripts, meaning both manual and IaC deployments use the SAME battle-tested installation logic
+     
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Protect your web applications with AWS Cognito authentication using nginx as a reverse proxy and oauth2-proxy as the OIDC provider. No code changes required in your application!
