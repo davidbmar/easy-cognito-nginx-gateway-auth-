@@ -1,0 +1,45 @@
+# Example Configuration for Single Instance Auth Gateway
+# Copy this file to terraform.tfvars and fill in your values
+
+# Required: AWS Region
+region = "us-east-1"
+
+# Required: Domain name (must point to this server's IP)
+domain_name = "gateway.example.com"
+
+# Required: Cognito credentials (create User Pool in AWS Console first)
+cognito_pool_id       = "us-east-1_XXXXXXXXX"
+cognito_client_id     = "your-client-id"
+cognito_client_secret = "your-client-secret"
+
+# Optional: Resource naming
+# name_prefix = "my-gateway"
+# environment = "prod"
+
+# Optional: Use existing VPC instead of creating new one
+# create_vpc      = false
+# existing_vpc_id = "vpc-xxxxxxxxx"
+
+# Optional: Custom VPC CIDR (if creating new VPC)
+# vpc_cidr = "10.0.0.0/16"
+
+# Optional: Restrict HTTPS access to specific IPs
+# allowed_cidr_blocks = ["203.0.113.0/24"]
+
+# Optional: Allow SSH from specific IPs (or use ssh-helper for dynamic IPs)
+# ssh_allowed_cidr_blocks = ["203.0.113.5/32"]
+
+# Optional: EC2 configuration
+# instance_type = "t3.small"
+# key_name      = "my-key-pair"
+# allocate_eip  = true
+
+# Optional: SSL configuration
+# ssl_method = "letsencrypt"
+# ssl_email  = "admin@example.com"
+
+# Optional: Additional tags
+# tags = {
+#   Team = "Platform"
+#   Cost = "Shared"
+# }
