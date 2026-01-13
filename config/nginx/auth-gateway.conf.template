@@ -23,9 +23,20 @@ upstream {{APP1_NAME}} {
 #     server 127.0.0.1:4000;
 # }
 
+# HTTP Server - Redirect all traffic to HTTPS
+# This prevents OAuth state mismatch issues by ensuring all
+# authentication flows start over HTTPS
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
+    server_name {{DOMAIN}};
+
+    # Redirect all HTTP requests to HTTPS
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS Server - Main application server
+server {
     listen 443 ssl default_server;
     listen [::]:443 ssl default_server;
 
