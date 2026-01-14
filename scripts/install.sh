@@ -176,14 +176,27 @@ echo ""
 
 # Step 1: Install dependencies
 log_info "[1/7] Installing dependencies..."
-apt-get update -qq
-apt-get install -y nginx wget curl jq > /dev/null 2>&1
-log_success "Dependencies installed"
+if apt-get update -qq && apt-get install -y nginx wget curl jq > /dev/null 2>&1; then
+    log_success "Dependencies installed"
+else
+    log_error "Failed to install dependencies"
+    exit 1
+fi
 
 # Step 2: Install oauth2-proxy
 log_info "[2/7] Installing oauth2-proxy..."
-bash "$SCRIPT_DIR/setup-oauth2-proxy.sh"
-log_success "oauth2-proxy installed"
+if bash "$SCRIPT_DIR/setup-oauth2-proxy.sh"; then
+    # Verify oauth2-proxy binary exists
+    if command -v oauth2-proxy >/dev/null 2>&1 || [ -x /usr/local/bin/oauth2-proxy ]; then
+        log_success "oauth2-proxy installed"
+    else
+        log_error "oauth2-proxy binary not found after installation"
+        exit 1
+    fi
+else
+    log_error "Failed to install oauth2-proxy"
+    exit 1
+fi
 
 # Step 3: Generate SSL certificate (if not skipped)
 if [ "$SKIP_SSL" = false ]; then
@@ -197,8 +210,18 @@ fi
 # Step 4: Configure oauth2-proxy
 log_info "[4/7] Configuring oauth2-proxy..."
 
-# Generate cookie secret
-COOKIE_SECRET=$(python3 -c 'import os,base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())' || openssl rand -base64 32 | tr -d '\n')
+# Generate cookie secret (must be exactly 32 bytes for AES cipher)
+# Try Python first (more reliable), fall back to openssl
+COOKIE_SECRET=$(python3 -c 'import os,base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode()[:32])' 2>/dev/null || openssl rand -base64 32 | tr -d '\n' | head -c 32)
+
+# Validate cookie secret length
+if [ ${#COOKIE_SECRET} -ne 32 ]; then
+    log_error "Failed to generate valid 32-byte cookie secret (got ${#COOKIE_SECRET} bytes)"
+    log_error "Generated secret: $COOKIE_SECRET"
+    exit 1
+fi
+
+log_info "Generated 32-byte cookie secret"
 
 # Create oauth2-proxy config directory
 mkdir -p /etc/oauth2-proxy
@@ -245,8 +268,14 @@ ln -sf /etc/nginx/sites-available/auth-gateway /etc/nginx/sites-enabled/auth-gat
 rm -f /etc/nginx/sites-enabled/default
 
 # Test nginx configuration
-nginx -t
-log_success "nginx configured"
+if nginx -t 2>&1 | tee /tmp/nginx-test.log; then
+    log_success "nginx configured"
+else
+    log_error "nginx configuration test failed"
+    log_error "See /tmp/nginx-test.log for details"
+    cat /tmp/nginx-test.log
+    exit 1
+fi
 
 # Step 6: Install systemd service
 log_info "[6/7] Installing systemd service..."
@@ -257,9 +286,65 @@ log_success "systemd service installed"
 
 # Step 7: Start services
 log_info "[7/7] Starting services..."
+
+# Start oauth2-proxy
 systemctl restart oauth2-proxy
+sleep 2
+
+# Verify oauth2-proxy started successfully
+if ! systemctl is-active --quiet oauth2-proxy; then
+    log_error "oauth2-proxy failed to start"
+    log_error "Check logs with: sudo journalctl -u oauth2-proxy -n 50"
+    exit 1
+fi
+log_success "oauth2-proxy started successfully"
+
+# Start nginx
 systemctl restart nginx
-log_success "Services started"
+
+# Verify nginx started successfully
+if ! systemctl is-active --quiet nginx; then
+    log_error "nginx failed to start"
+    log_error "Check logs with: sudo journalctl -u nginx -n 50"
+    log_error "Check config with: sudo nginx -t"
+    exit 1
+fi
+log_success "nginx started successfully"
+
+log_success "All services started"
+
+# Final verification
+log_info "Verifying installation..."
+sleep 2
+
+# Check if ports are listening
+PORTS_OK=true
+
+if ss -tln | grep -q ":443 "; then
+    log_success "nginx listening on port 443 (HTTPS)"
+else
+    log_warning "nginx not listening on port 443"
+    PORTS_OK=false
+fi
+
+if ss -tln | grep -q ":$OAUTH2_PORT "; then
+    log_success "oauth2-proxy listening on port $OAUTH2_PORT"
+else
+    log_warning "oauth2-proxy not listening on port $OAUTH2_PORT"
+    PORTS_OK=false
+fi
+
+# Test authentication redirect
+log_info "Testing authentication redirect..."
+TEST_RESULT=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost/ 2>/dev/null || echo "000")
+
+if [ "$TEST_RESULT" = "302" ]; then
+    log_success "Authentication redirect working (HTTP 302)"
+elif [ "$TEST_RESULT" = "200" ]; then
+    log_success "Gateway responding (HTTP 200)"
+else
+    log_warning "Unexpected response code: $TEST_RESULT"
+fi
 
 echo ""
 log_success "==================================="
