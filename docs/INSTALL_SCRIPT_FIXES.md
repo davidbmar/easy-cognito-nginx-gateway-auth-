@@ -400,6 +400,36 @@ Final Verification:
 
 ---
 
+---
+
+## Additional Improvements (2026-01-14)
+
+### 5. Static Files Permissions Safeguard
+
+**Added to**: Step 7/8 in install.sh
+
+**Issue**: CSS and JavaScript files fail to load (403 Forbidden) because nginx cannot access files in `/home/ubuntu/` due to default 750 permissions.
+
+**Solution**:
+```bash
+# Step 7: Fix directory permissions for static files
+chmod 755 /home/ubuntu
+
+# Verify www-data can access
+sudo -u www-data test -x /home/ubuntu
+```
+
+**Benefits**:
+- Prevents CSS loading issues on fresh installs
+- Automatically configured during installation
+- Validated with clear success/failure messages
+
+**Standalone Fix**: Use `scripts/fix-static-files-permissions.sh` for existing deployments
+
+**Documentation**: See `docs/STATIC_FILES_PERMISSIONS.md` for detailed explanation
+
+---
+
 **Last Updated**: 2026-01-14
 **Status**: ✅ Fixed and Deployed
 **Tested By**: Claude Sonnet 4.5
