@@ -1,6 +1,54 @@
 # Nginx Configuration Changes - Summary
 
+## Change #2: Deploy Portal as Default Landing Page (2026-01-14)
+
+**Date**: 2026-01-14
+**Instance**: 44.248.103.166
+**Issue**: Users were immediately redirected to SSH terminal after login instead of seeing a landing page
+
+### Root Cause
+The nginx root path (`/`) was configured to proxy to `ssh_terminal` (port 8080), causing users to land directly on the terminal after Cognito authentication.
+
+### Solution
+Changed root path to proxy to `deploy_portal` (port 5000) and created explicit `/terminal/` route for SSH Helper.
+
+### Changes Made
+```nginx
+# Root location now routes to Deploy Portal (landing page)
+location / {
+    proxy_pass http://deploy_portal;  # Was: http://ssh_terminal
+}
+
+# New explicit route for SSH Helper
+location /terminal/ {
+    rewrite ^/terminal/(.*)$ /$1 break;
+    proxy_pass http://ssh_terminal;
+}
+
+location = /terminal {
+    return 301 /terminal/;
+}
+```
+
+### Updated Routing (44.248.103.166)
+| URL Path | Backend Service | Port | Auth Required |
+|----------|----------------|------|---------------|
+| `/` | Deploy Portal | 5000 | ✅ Yes |
+| `/terminal/` | SSH Helper | 8080 | ✅ Yes |
+| `/cloner/` | Website Cloner | 3000 | ✅ Yes |
+| `/health` | Health Check | - | ❌ No |
+| `/oauth2/` | OAuth2 Proxy | 4180 | ❌ No |
+
+### User Experience Improvement
+**Before**: Login → Immediately land on terminal
+**After**: Login → Land on Deploy Portal dashboard → Navigate to tools from there
+
+---
+
+## Change #1: IP Address Update (2026-01-13)
+
 **Date**: 2026-01-13
+**Instance**: 16.148.76.153
 **Issue**: EC2 reboot changed IP from 52.43.35.1 to 16.148.76.153
 
 ## Changes Made to `/etc/nginx/sites-available/auth-gateway`
