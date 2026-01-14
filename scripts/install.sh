@@ -175,7 +175,7 @@ log_info "Starting installation..."
 echo ""
 
 # Step 1: Install dependencies
-log_info "[1/7] Installing dependencies..."
+log_info "[1/8] Installing dependencies..."
 if apt-get update -qq && apt-get install -y nginx wget curl jq > /dev/null 2>&1; then
     log_success "Dependencies installed"
 else
@@ -184,7 +184,7 @@ else
 fi
 
 # Step 2: Install oauth2-proxy
-log_info "[2/7] Installing oauth2-proxy..."
+log_info "[2/8] Installing oauth2-proxy..."
 if bash "$SCRIPT_DIR/setup-oauth2-proxy.sh"; then
     # Verify oauth2-proxy binary exists
     if command -v oauth2-proxy >/dev/null 2>&1 || [ -x /usr/local/bin/oauth2-proxy ]; then
@@ -200,15 +200,15 @@ fi
 
 # Step 3: Generate SSL certificate (if not skipped)
 if [ "$SKIP_SSL" = false ]; then
-    log_info "[3/7] Generating SSL certificates..."
+    log_info "[3/8] Generating SSL certificates..."
     bash "$SCRIPT_DIR/setup-ssl.sh" --domain="$DOMAIN"
     log_success "SSL certificates generated"
 else
-    log_warning "[3/7] Skipping SSL certificate generation"
+    log_warning "[3/8] Skipping SSL certificate generation"
 fi
 
 # Step 4: Configure oauth2-proxy
-log_info "[4/7] Configuring oauth2-proxy..."
+log_info "[4/8] Configuring oauth2-proxy..."
 
 # Generate cookie secret (must be exactly 32 bytes for AES cipher)
 # Try Python first (more reliable), fall back to openssl
@@ -241,7 +241,7 @@ chmod 600 /etc/oauth2-proxy/config.cfg
 log_success "oauth2-proxy configured"
 
 # Step 5: Configure nginx
-log_info "[5/7] Configuring nginx..."
+log_info "[5/8] Configuring nginx..."
 
 # Determine app name from port
 APP_NAME="app_${APP_PORT}"
@@ -278,14 +278,33 @@ else
 fi
 
 # Step 6: Install systemd service
-log_info "[6/7] Installing systemd service..."
+log_info "[6/8] Installing systemd service..."
 cp "$PROJECT_ROOT/config/systemd/oauth2-proxy.service" /etc/systemd/system/oauth2-proxy.service
 systemctl daemon-reload
 systemctl enable oauth2-proxy
 log_success "systemd service installed"
 
-# Step 7: Start services
-log_info "[7/7] Starting services..."
+# Step 7: Fix directory permissions for static files
+log_info "[7/8] Configuring directory permissions for static files..."
+
+# Ensure nginx (www-data) can access /home/ubuntu for static file serving
+# This is required when using 'alias' directive in nginx to serve CSS/JS from user directories
+if [ -d /home/ubuntu ]; then
+    chmod 755 /home/ubuntu
+    log_success "Set /home/ubuntu permissions to 755 (allows nginx to serve static files)"
+else
+    log_warning "/home/ubuntu directory not found (unusual), skipping permission fix"
+fi
+
+# Verify www-data can access the directory
+if sudo -u www-data test -x /home/ubuntu 2>/dev/null; then
+    log_success "Verified: www-data can access /home/ubuntu"
+else
+    log_warning "Warning: www-data cannot access /home/ubuntu (static files may not load)"
+fi
+
+# Step 8: Start services
+log_info "[8/8] Starting services..."
 
 # Start oauth2-proxy
 systemctl restart oauth2-proxy
