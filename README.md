@@ -91,6 +91,42 @@ https://your-domain.com
 
 You'll be redirected to AWS Cognito for authentication!
 
+### Bootstrap Installation (Recommended for EC2 Infrastructure)
+
+For automated EC2 instance setup with multiple system applications:
+
+1. **Create configuration file:**
+```bash
+cp config.env.example config.env
+# OR use global config at /home/ubuntu/.ec2-config.env
+```
+
+2. **Edit configuration with your values:**
+```bash
+nano config.env
+# Set COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, etc.
+```
+
+3. **Run bootstrap script:**
+```bash
+sudo scripts/bootstrap.sh
+```
+
+The bootstrap script will:
+- Install oauth2-proxy binary
+- Generate self-signed SSL certificates
+- Configure oauth2-proxy with Cognito settings
+- Set up nginx with modular configuration
+- Create systemd service for oauth2-proxy
+- Set up include directories for application routes
+
+4. **Verify installation:**
+```bash
+scripts/verify-setup.sh
+```
+
+This approach sets up a modular nginx configuration where each application can add its own upstream and route configs to `/etc/nginx/conf.d/system-upstreams/` and `/etc/nginx/conf.d/routes/` respectively.
+
 ## 📚 Documentation
 
 - **[Installation Guide](docs/INSTALLATION.md)** - Detailed setup instructions
