@@ -33,7 +33,7 @@ cookie_secret = "{{COOKIE_SECRET}}"  # Generate with: python -c 'import os,base6
 cookie_domains = ["{{DOMAIN}}"]
 cookie_secure = true          # Set to true for HTTPS (production)
 cookie_httponly = true
-cookie_samesite = "lax"
+cookie_samesite = ""           # Empty string works best with self-signed certs and IP addresses
 cookie_expire = "24h"
 cookie_refresh = "1h"
 

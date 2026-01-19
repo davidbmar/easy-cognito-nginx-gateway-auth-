@@ -161,6 +161,64 @@ install_auth_gateway() {
     log "Authentication gateway installed"
 }
 
+fix_oauth2_permissions() {
+    log "Fixing OAuth2 proxy file permissions..."
+
+    # Ensure correct ownership for oauth2-proxy config
+    # The service runs as ubuntu user, so the config must be readable
+    if [ -f "/etc/oauth2-proxy/config.cfg" ]; then
+        chown ubuntu:ubuntu /etc/oauth2-proxy/config.cfg
+        chmod 600 /etc/oauth2-proxy/config.cfg
+        log "OAuth2 proxy config ownership fixed (ubuntu:ubuntu)"
+    else
+        warn "OAuth2 proxy config file not found at /etc/oauth2-proxy/config.cfg"
+    fi
+}
+
+add_nginx_buffer_settings() {
+    log "Adding nginx buffer settings for OAuth headers..."
+
+    # Check if buffer settings already exist
+    if grep -q "proxy_buffer_size" /etc/nginx/sites-available/auth-gateway; then
+        log "Nginx buffer settings already present"
+        return
+    fi
+
+    # Add buffer settings to the HTTPS server block
+    # These are needed because OAuth2 callback headers can be very large
+    local temp_file=$(mktemp)
+
+    awk '
+    /^server {/ {
+        in_server = 1
+        print
+        next
+    }
+
+    in_server && /listen 443 ssl/ {
+        print
+        print ""
+        print "    # OAuth2 headers can be large - increase buffers"
+        print "    proxy_buffer_size 16k;"
+        print "    proxy_buffers 4 16k;"
+        print "    proxy_busy_buffers_size 32k;"
+        print ""
+        buffer_added = 1
+        next
+    }
+
+    { print }
+    ' /etc/nginx/sites-available/auth-gateway > "$temp_file"
+
+    if [ -s "$temp_file" ]; then
+        mv "$temp_file" /etc/nginx/sites-available/auth-gateway
+        log "Nginx buffer settings added"
+    else
+        rm "$temp_file"
+        warn "Failed to add nginx buffer settings"
+    fi
+}
+
 configure_modular_nginx() {
     log "Configuring modular nginx includes..."
 
@@ -297,6 +355,8 @@ main() {
     load_config
     create_nginx_include_directories
     install_auth_gateway
+    fix_oauth2_permissions
+    add_nginx_buffer_settings
     configure_modular_nginx
     reload_services
     verify_installation
